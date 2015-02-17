@@ -20,8 +20,8 @@ import com.koushikdutta.async.http.server.AsyncHttpServerResponse;
 import com.koushikdutta.async.http.server.HttpServerRequestCallback;
 
 import org.namelessrom.devicecontrol.Application;
+import org.namelessrom.devicecontrol.Device;
 import org.namelessrom.devicecontrol.Logger;
-import org.namelessrom.devicecontrol.objects.Device;
 import org.namelessrom.devicecontrol.services.WebServerService;
 import org.namelessrom.devicecontrol.utils.ContentTypes;
 import org.namelessrom.devicecontrol.utils.HtmlHelper;
@@ -167,14 +167,15 @@ public class ServerWrapper {
                 return;
             }
             if (!isAuthenticated(req)) {
-                res.getHeaders().getHeaders().add("WWW-Authenticate",
-                        "Basic realm=\"DeviceControl\"");
+                res.getHeaders()
+                        .getHeaders()
+                        .add("WWW-Authenticate", "Basic realm=\"DeviceControl\"");
                 res.responseCode(401);
                 res.end();
                 return;
             }
             if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                res.send("SDCARD not mounted!");
+                res.send("sdcard not mounted!");
                 return;
             }
             boolean isDirectory = true;
@@ -327,7 +328,9 @@ public class ServerWrapper {
         mServer.get("/api/device", new HttpServerRequestCallback() {
             @Override public void onRequest(final AsyncHttpServerRequest req,
                     final AsyncHttpServerResponse res) {
-                final String result = new Gson().toJson(Device.get());
+                final Device device = Device.get();
+                device.update();
+                final String result = new Gson().toJson(device);
                 res.send(result);
             }
         });
