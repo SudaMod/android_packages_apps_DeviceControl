@@ -15,8 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package org.namelessrom.devicecontrol.ui.fragments.tools;
+package org.namelessrom.devicecontrol.appmanager;
 
+import android.animation.Animator;
+import android.animation.ObjectAnimator;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
@@ -31,7 +33,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
-import org.namelessrom.devicecontrol.Application;
 import org.namelessrom.devicecontrol.R;
 import org.namelessrom.devicecontrol.objects.AppItem;
 import org.namelessrom.devicecontrol.ui.adapters.AppListAdapter;
@@ -44,8 +45,12 @@ import java.util.Collections;
 import java.util.List;
 
 public class AppListFragment extends AttachFragment implements DeviceConstants {
+    private static final int ANIM_DURATION = 250;
+
     private RecyclerView mRecyclerView;
     private LinearLayout mProgressContainer;
+
+    private boolean mIsLoading;
 
     @Override protected int getFragmentId() { return ID_TOOLS_APP_MANAGER; }
 
@@ -60,7 +65,7 @@ public class AppListFragment extends AttachFragment implements DeviceConstants {
 
         // if the user hit refresh
         if (id == R.id.menu_action_refresh) {
-            new LoadApps().execute();
+            loadApps(true);
             return true;
         }
 
@@ -87,7 +92,7 @@ public class AppListFragment extends AttachFragment implements DeviceConstants {
 
     @Override public void onResume() {
         super.onResume();
-        new LoadApps().execute();
+        loadApps(false);
     }
 
     private void invalidateOptionsMenu() {
@@ -96,15 +101,36 @@ public class AppListFragment extends AttachFragment implements DeviceConstants {
         }
     }
 
-    private class LoadApps extends AsyncTask<Void, Void, List<AppItem>> {
-        @Override protected void onPreExecute() {
-            if (mProgressContainer != null) {
-                mProgressContainer.setVisibility(View.VISIBLE);
-            }
-        }
+    private void loadApps(boolean animate) {
+        if (mIsLoading) return;
 
+        mIsLoading = true;
+        mProgressContainer.setVisibility(View.VISIBLE);
+
+        if (animate) {
+            final ObjectAnimator anim = ObjectAnimator.ofFloat(mProgressContainer, "alpha", 0f, 1f);
+            anim.addListener(new Animator.AnimatorListener() {
+                @Override public void onAnimationStart(Animator animation) { }
+
+                @Override public void onAnimationEnd(Animator animation) {
+                    new LoadApps().execute();
+                }
+
+                @Override public void onAnimationCancel(Animator animation) { }
+
+                @Override public void onAnimationRepeat(Animator animation) { }
+            });
+            anim.setDuration(ANIM_DURATION);
+            anim.start();
+        } else {
+            mProgressContainer.setAlpha(1f);
+            new LoadApps().execute();
+        }
+    }
+
+    private class LoadApps extends AsyncTask<Void, Void, List<AppItem>> {
         @Override protected List<AppItem> doInBackground(Void... params) {
-            final PackageManager pm = Application.get().getPackageManager();
+            final PackageManager pm = getActivity().getPackageManager();
             final List<AppItem> appList = new ArrayList<>();
             final List<PackageInfo> pkgInfos = pm.getInstalledPackages(0);
 
@@ -122,13 +148,27 @@ public class AppListFragment extends AttachFragment implements DeviceConstants {
         }
 
         @Override protected void onPostExecute(final List<AppItem> appItems) {
-            if (appItems != null && isAdded()) {
-                if (mProgressContainer != null) {
+            final ObjectAnimator anim = ObjectAnimator.ofFloat(mProgressContainer, "alpha", 1f, 0f);
+            anim.addListener(new Animator.AnimatorListener() {
+                @Override public void onAnimationStart(Animator animation) { }
+
+                @Override public void onAnimationEnd(Animator animation) {
+                    if (appItems != null) {
+                        final AppListAdapter adapter = new AppListAdapter(getActivity(), appItems);
+                        mRecyclerView.setAdapter(adapter);
+                    }
+
                     mProgressContainer.setVisibility(View.GONE);
+                    mIsLoading = false;
                 }
-                final AppListAdapter adapter = new AppListAdapter(getActivity(), appItems);
-                mRecyclerView.setAdapter(adapter);
-            }
+
+                @Override public void onAnimationCancel(Animator animation) { }
+
+                @Override public void onAnimationRepeat(Animator animation) { }
+            });
+            anim.setDuration(ANIM_DURATION);
+            anim.start();
+
             invalidateOptionsMenu();
         }
     }
