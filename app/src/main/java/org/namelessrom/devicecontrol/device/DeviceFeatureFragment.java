@@ -17,11 +17,12 @@
  */
 package org.namelessrom.devicecontrol.device;
 
+import android.content.Context;
 import android.support.v4.app.Fragment;
 
+import org.namelessrom.devicecontrol.DeviceConstants;
 import org.namelessrom.devicecontrol.R;
 import org.namelessrom.devicecontrol.ui.views.AttachViewPagerFragment;
-import org.namelessrom.devicecontrol.DeviceConstants;
 
 import java.util.ArrayList;
 
@@ -42,8 +43,8 @@ public class DeviceFeatureFragment extends AttachViewPagerFragment {
         return new ViewPagerAdapter(getChildFragmentManager(), fragments, titles);
     }
 
-    public static String restore() {
+    public static String restore(Context context) {
         // TODO: redo the whole restore on bootup stuff
-        return DeviceFeatureGeneralFragment.restore();
+        return DeviceFeatureGeneralFragment.restore(context);
     }
 }

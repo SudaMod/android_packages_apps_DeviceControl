@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package org.namelessrom.devicecontrol.ui.fragments.performance.sub;
+package org.namelessrom.devicecontrol.cpu;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -35,15 +35,16 @@ import android.view.WindowManager.LayoutParams;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
+import org.namelessrom.devicecontrol.Application;
+import org.namelessrom.devicecontrol.DeviceConstants;
 import org.namelessrom.devicecontrol.R;
-import org.namelessrom.devicecontrol.database.DataItem;
+import org.namelessrom.devicecontrol.configuration.BootupConfiguration;
 import org.namelessrom.devicecontrol.database.DatabaseHandler;
 import org.namelessrom.devicecontrol.hardware.GovernorUtils;
+import org.namelessrom.devicecontrol.objects.BootupItem;
 import org.namelessrom.devicecontrol.ui.preferences.CustomPreference;
 import org.namelessrom.devicecontrol.ui.views.AttachPreferenceFragment;
-import org.namelessrom.devicecontrol.utils.PreferenceHelper;
 import org.namelessrom.devicecontrol.utils.Utils;
-import org.namelessrom.devicecontrol.DeviceConstants;
 
 import java.io.File;
 
@@ -174,8 +175,8 @@ public class GovernorFragment extends AttachPreferenceFragment implements Govern
             @Override protected Void doInBackground(String... params) {
                 final String name = p.getTitle().toString();
                 final String key = p.getKey();
-                PreferenceHelper.setBootup(new DataItem(
-                        DatabaseHandler.CATEGORY_CPU, name, key, value));
+                BootupConfiguration.setBootup(Application.get(), new BootupItem(
+                        DatabaseHandler.CATEGORY_CPU, name, key, value, true));
 
                 return null;
             }

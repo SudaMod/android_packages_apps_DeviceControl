@@ -21,7 +21,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
-import android.hardware.SensorManager;
 import android.os.Build;
 import android.widget.TextView;
 
@@ -45,10 +44,6 @@ public class StepSensor extends BaseSensor {
 
     @Override public Sensor getSensor() {
         return mSensor;
-    }
-
-    @Override public int getSensorDelay() {
-        return SensorManager.SENSOR_DELAY_FASTEST;
     }
 
     public StepSensor(final Context context) {

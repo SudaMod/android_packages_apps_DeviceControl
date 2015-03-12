@@ -20,7 +20,6 @@ package org.namelessrom.devicecontrol.device.sensors.position;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
-import android.hardware.SensorManager;
 import android.widget.TextView;
 
 import org.namelessrom.devicecontrol.R;
@@ -41,10 +40,6 @@ public class ProximitySensor extends BaseSensor {
 
     @Override public Sensor getSensor() {
         return mSensor;
-    }
-
-    @Override public int getSensorDelay() {
-        return SensorManager.SENSOR_DELAY_FASTEST;
     }
 
     public ProximitySensor(final Context context) {

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package org.namelessrom.devicecontrol.ui.fragments.performance;
+package org.namelessrom.devicecontrol.cpu;
 
 import android.os.Bundle;
 import android.preference.Preference;
@@ -37,12 +37,12 @@ import org.namelessrom.devicecontrol.MainActivity;
 import org.namelessrom.devicecontrol.R;
 import org.namelessrom.devicecontrol.actions.ActionProcessor;
 import org.namelessrom.devicecontrol.actions.extras.MpDecisionAction;
+import org.namelessrom.devicecontrol.configuration.BootupConfiguration;
 import org.namelessrom.devicecontrol.configuration.DeviceConfiguration;
-import org.namelessrom.devicecontrol.database.DataItem;
 import org.namelessrom.devicecontrol.database.DatabaseHandler;
-import org.namelessrom.devicecontrol.hardware.CpuUtils;
 import org.namelessrom.devicecontrol.hardware.GovernorUtils;
-import org.namelessrom.devicecontrol.hardware.monitors.CpuCoreMonitor;
+import org.namelessrom.devicecontrol.cpu.monitors.CpuCoreMonitor;
+import org.namelessrom.devicecontrol.objects.BootupItem;
 import org.namelessrom.devicecontrol.objects.CpuCore;
 import org.namelessrom.devicecontrol.objects.ShellOutput;
 import org.namelessrom.devicecontrol.ui.preferences.AwesomePreferenceCategory;
@@ -52,7 +52,6 @@ import org.namelessrom.devicecontrol.ui.preferences.CustomPreference;
 import org.namelessrom.devicecontrol.ui.preferences.CustomTogglePreference;
 import org.namelessrom.devicecontrol.ui.views.AttachPreferenceFragment;
 import org.namelessrom.devicecontrol.ui.views.CpuCoreView;
-import org.namelessrom.devicecontrol.utils.PreferenceHelper;
 import org.namelessrom.devicecontrol.utils.PreferenceUtils;
 import org.namelessrom.devicecontrol.utils.Utils;
 
@@ -71,6 +70,7 @@ public class CpuSettingsFragment extends AttachPreferenceFragment implements Pre
 
     private CustomListPreference mGovernor;
     private CustomPreference mGovernorTuning;
+    private CustomTogglePreference mCpuGovLock;
 
     private CustomTogglePreference mMpDecision;
     private CustomListPreference mCpuQuietGov;
@@ -125,6 +125,10 @@ public class CpuSettingsFragment extends AttachPreferenceFragment implements Pre
         mGovernor.setOnPreferenceChangeListener(this);
 
         mGovernorTuning = (CustomPreference) findPreference("pref_governor_tuning");
+
+        mCpuGovLock = (CustomTogglePreference) findPreference(DeviceConfiguration.CPU_LOCK_GOV);
+        mCpuGovLock.setChecked(DeviceConfiguration.get(getActivity()).perfCpuGovLock);
+        mCpuGovLock.setOnPreferenceChangeListener(this);
 
         // get hold of hotplugging and remove it, to add it back later if supported
         final PreferenceCategory hotplugging = (PreferenceCategory) findPreference("hotplugging");
@@ -277,6 +281,10 @@ public class CpuSettingsFragment extends AttachPreferenceFragment implements Pre
 
             ActionProcessor.processAction(ActionProcessor.ACTION_CPU_GOVERNOR, selected, true);
             return true;
+        } else if (preference == mCpuGovLock) {
+            DeviceConfiguration.get(getActivity()).perfCpuGovLock = (Boolean) o;
+            DeviceConfiguration.get(getActivity()).saveConfiguration(getActivity());
+            return true;
         } else if (preference == mMpDecision) {
             final boolean value = (Boolean) o;
             new MpDecisionAction(value ? "1" : "0", true).triggerAction();
@@ -285,9 +293,9 @@ public class CpuSettingsFragment extends AttachPreferenceFragment implements Pre
             final String path = Application.get().getString(R.string.file_cpu_quiet_cur_gov);
             final String value = String.valueOf(o);
             Utils.runRootCommand(Utils.getWriteCommand(path, value));
-            PreferenceHelper.setBootup(new DataItem(
+            BootupConfiguration.setBootup(getActivity(), new BootupItem(
                     DatabaseHandler.CATEGORY_EXTRAS, mCpuQuietGov.getKey(),
-                    path, value));
+                    path, value, true));
             mCpuQuietGov.setSummary(value);
             return true;
         }

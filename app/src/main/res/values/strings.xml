@@ -273,7 +273,7 @@
     <string name="flash_warning">You are about to flash!\nWhen continuing, your device will reboot to recovery and flash the selected items.\n\nDo you want to proceed?</string>
     <string name="both">Both</string>
     <string name="pick_file">Pick a file</string>
-    <string name="something_went_wrong">Sorry but something went wrong!\nPlease try again!</string>
+    <string name="something_went_wrong">Sorry but something went wrong!</string>
     <string name="recovery">Recovery</string>
     <string name="bootloader">Bootloader</string>
     <string name="reboot">Reboot</string>
@@ -427,4 +427,6 @@
     <string name="near">Near</string>
     <string name="cpu_lock_freq">Lock frequencies</string>
     <string name="cpu_lock_freq_summary">Tries to prevent modifying frequencies\nThis may not always work on some devices!</string>
+    <string name="cpu_lock_gov">Lock governors</string>
+    <string name="cpu_lock_gov_summary">Tries to prevent modifying governors\nThis may not always work on some devices!</string>
 </resources>

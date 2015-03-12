@@ -27,7 +27,7 @@ import org.namelessrom.devicecontrol.utils.PreferenceHelper;
 /**
  * Device configuration which auto serializes itself to a file
  */
-public class DeviceConfiguration extends BaseConfiguration {
+public class DeviceConfiguration extends BaseConfiguration<DeviceConfiguration> {
     // TODO: get rid of all these strings after migration
     public static final String SHOW_LAUNCHER = "show_launcher";
     public static final String EXTENSIVE_LOGGING = "extensive_logging";
@@ -38,6 +38,7 @@ public class DeviceConfiguration extends BaseConfiguration {
     public static final String MONKEY = "monkey";
     public static final String SHOW_POLLFISH = "show_pollfish";
     public static final String CPU_LOCK_FREQ = "cpu_lock_freq";
+    public static final String CPU_LOCK_GOV = "cpu_lock_gov";
     public static final String CPU_SHOW_INFO = "pref_show_cpu_info";
 
     public boolean dcFirstStart;
@@ -58,6 +59,7 @@ public class DeviceConfiguration extends BaseConfiguration {
     public boolean extensiveLogging;
 
     public boolean perfCpuLock;
+    public boolean perfCpuGovLock;
     public boolean perfCpuInfo;
 
     public boolean monkey;
@@ -119,11 +121,10 @@ public class DeviceConfiguration extends BaseConfiguration {
         return true;
     }
 
-    @Override public void loadConfiguration(Context context) {
-        final DeviceConfiguration config =
-                (DeviceConfiguration) loadRawConfiguration(context, DeviceConfiguration.class);
+    @Override public DeviceConfiguration loadConfiguration(Context context) {
+        final DeviceConfiguration config = loadRawConfiguration(context, DeviceConfiguration.class);
         if (config == null) {
-            return;
+            return this;
         }
 
         this.dcFirstStart = config.dcFirstStart;
@@ -144,10 +145,18 @@ public class DeviceConfiguration extends BaseConfiguration {
         this.extensiveLogging = config.extensiveLogging;
 
         this.perfCpuLock = config.perfCpuLock;
+        this.perfCpuGovLock = config.perfCpuGovLock;
         this.perfCpuInfo = config.perfCpuInfo;
 
         this.monkey = config.monkey;
 
         this.migrationLevel = config.migrationLevel;
+
+        return this;
+    }
+
+    @Override public DeviceConfiguration saveConfiguration(Context context) {
+        saveConfigurationInternal(context);
+        return this;
     }
 }

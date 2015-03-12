@@ -20,7 +20,6 @@ package org.namelessrom.devicecontrol.device.sensors.environment;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
-import android.hardware.SensorManager;
 import android.widget.TextView;
 
 import org.namelessrom.devicecontrol.R;
@@ -39,10 +38,6 @@ public class LightSensor extends BaseSensor {
 
     @Override public Sensor getSensor() {
         return mSensor;
-    }
-
-    @Override public int getSensorDelay() {
-        return SensorManager.SENSOR_DELAY_FASTEST;
     }
 
     public LightSensor(final Context context) {
