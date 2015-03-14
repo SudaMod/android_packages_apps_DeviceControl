@@ -61,30 +61,9 @@ public class DeviceFeatureGeneralFragment extends CustomPreferenceFragment imple
     // Input
     //==============================================================================================
     private CustomTogglePreference mGloveMode;
-    private AwesomeTogglePreference mAwesomeGloveMode;
-    private AwesomeTogglePreference mKnockOn;
-    private AwesomeTogglePreference mResetOnSuspend;
-
-    //==============================================================================================
-    // Lights
-    //==============================================================================================
-    private AwesomeTogglePreference mBacklightKey;
-    private AwesomeTogglePreference mBacklightNotification;
-    private AwesomeTogglePreference mKeyboardBacklight;
-
-    //==============================================================================================
-    // Display
-    //==============================================================================================
-    private AwesomeTogglePreference mLcdPowerReduce;
-    private AwesomeTogglePreference mLcdSunlightEnhancement;
-    private AwesomeTogglePreference mLcdColorEnhancement;
 
     private AwesomeListPreference mPanelColor;
 
-    //==============================================================================================
-    // Extras
-    //==============================================================================================
-    private AwesomeTogglePreference mLoggerMode;
     private CustomPreference mFastCharge;
     private CustomPreference mSoundControl;
 
@@ -100,7 +79,8 @@ public class DeviceFeatureGeneralFragment extends CustomPreferenceFragment imple
         final PreferenceScreen preferenceScreen = getPreferenceScreen();
 
         PreferenceCategory category = (PreferenceCategory) findPreference("input_gestures");
-        mKnockOn = (AwesomeTogglePreference) findPreference("knockon_gesture_enable");
+        AwesomeTogglePreference mKnockOn =
+                (AwesomeTogglePreference) findPreference("knockon_gesture_enable");
         if (mKnockOn.isSupported()) {
             try {
                 mKnockOn.initValue();
@@ -108,6 +88,24 @@ public class DeviceFeatureGeneralFragment extends CustomPreferenceFragment imple
             mKnockOn.setOnPreferenceChangeListener(this);
         } else {
             category.removePreference(mKnockOn);
+        }
+
+        AwesomeTogglePreference sweepToWake =
+                (AwesomeTogglePreference) findPreference("sweep_to_wake");
+        if (sweepToWake.isSupported()) {
+            sweepToWake.initValue();
+            sweepToWake.setOnPreferenceChangeListener(this);
+        } else {
+            category.removePreference(sweepToWake);
+        }
+
+        AwesomeTogglePreference sweepToVolume =
+                (AwesomeTogglePreference) findPreference("sweep_to_volume");
+        if (sweepToVolume.isSupported()) {
+            sweepToVolume.initValue();
+            sweepToVolume.setOnPreferenceChangeListener(this);
+        } else {
+            category.removePreference(sweepToVolume);
         }
 
         if (category.getPreferenceCount() == 0) {
@@ -120,23 +118,25 @@ public class DeviceFeatureGeneralFragment extends CustomPreferenceFragment imple
             category.removePreference(pref);
         }
 
-        mAwesomeGloveMode = (AwesomeTogglePreference) findPreference("input_glove_mode_aw");
-        if (mAwesomeGloveMode.isSupported()) {
-            mAwesomeGloveMode.initValue();
-            mAwesomeGloveMode.setOnPreferenceChangeListener(this);
+        AwesomeTogglePreference awesomeGloveMode =
+                (AwesomeTogglePreference) findPreference("input_glove_mode_aw");
+        if (awesomeGloveMode.isSupported()) {
+            awesomeGloveMode.initValue();
+            awesomeGloveMode.setOnPreferenceChangeListener(this);
         } else {
-            category.removePreference(mAwesomeGloveMode);
-            mAwesomeGloveMode = null;
+            category.removePreference(awesomeGloveMode);
+            awesomeGloveMode = null;
         }
 
         mGloveMode = (CustomTogglePreference) findPreference("input_glove_mode");
         try {
             // if we have already added a glove mode preference, remove it too
-            if (mAwesomeGloveMode != null || !isHtsSupported()) {
+            if (awesomeGloveMode != null || !isHtsSupported()) {
                 category.removePreference(mGloveMode);
             } else {
-                final String value = BootupConfiguration.get(getActivity())
-                        .getItemByName(mGloveMode.getKey()).value;
+                final BootupItem bootupItem =  BootupConfiguration.get(getActivity())
+                        .getItemByName(mGloveMode.getKey());
+                final String value = (bootupItem != null ? bootupItem.value : null);
                 final boolean enableGlove = (value != null && value.equals("1"));
 
                 enableHts(enableGlove);
@@ -144,12 +144,13 @@ public class DeviceFeatureGeneralFragment extends CustomPreferenceFragment imple
             }
         } catch (Exception exc) { category.removePreference(mGloveMode); }
 
-        mResetOnSuspend = (AwesomeTogglePreference) findPreference("input_reset_on_suspend");
-        if (mResetOnSuspend.isSupported()) {
-            mResetOnSuspend.initValue();
-            mResetOnSuspend.setOnPreferenceChangeListener(this);
+        AwesomeTogglePreference resetOnSuspend =
+                (AwesomeTogglePreference) findPreference("input_reset_on_suspend");
+        if (resetOnSuspend.isSupported()) {
+            resetOnSuspend.initValue();
+            resetOnSuspend.setOnPreferenceChangeListener(this);
         } else {
-            category.removePreference(mResetOnSuspend);
+            category.removePreference(resetOnSuspend);
         }
 
         if (category.getPreferenceCount() == 0) {
@@ -159,28 +160,31 @@ public class DeviceFeatureGeneralFragment extends CustomPreferenceFragment imple
         // LIGHTS
 
         category = (PreferenceCategory) findPreference("touchkey");
-        mBacklightKey = (AwesomeTogglePreference) findPreference("touchkey_light");
-        if (mBacklightKey.isSupported()) {
-            mBacklightKey.initValue();
-            mBacklightKey.setOnPreferenceChangeListener(this);
+        AwesomeTogglePreference backlightKey =
+                (AwesomeTogglePreference) findPreference("touchkey_light");
+        if (backlightKey.isSupported()) {
+            backlightKey.initValue();
+            backlightKey.setOnPreferenceChangeListener(this);
         } else {
-            category.removePreference(mBacklightKey);
+            category.removePreference(backlightKey);
         }
 
-        mBacklightNotification = (AwesomeTogglePreference) findPreference("touchkey_bln");
-        if (mBacklightNotification.isSupported()) {
-            mBacklightNotification.initValue();
-            mBacklightNotification.setOnPreferenceChangeListener(this);
+        AwesomeTogglePreference backlightNotification =
+                (AwesomeTogglePreference) findPreference("touchkey_bln");
+        if (backlightNotification.isSupported()) {
+            backlightNotification.initValue();
+            backlightNotification.setOnPreferenceChangeListener(this);
         } else {
-            category.removePreference(mBacklightNotification);
+            category.removePreference(backlightNotification);
         }
 
-        mKeyboardBacklight = (AwesomeTogglePreference) findPreference("keyboard_light");
-        if (mKeyboardBacklight.isSupported()) {
-            mKeyboardBacklight.initValue();
-            mKeyboardBacklight.setOnPreferenceChangeListener(this);
+        AwesomeTogglePreference keyboardBacklight =
+                (AwesomeTogglePreference) findPreference("keyboard_light");
+        if (keyboardBacklight.isSupported()) {
+            keyboardBacklight.initValue();
+            keyboardBacklight.setOnPreferenceChangeListener(this);
         } else {
-            category.removePreference(mKeyboardBacklight);
+            category.removePreference(keyboardBacklight);
         }
 
         if (category.getPreferenceCount() == 0) {
@@ -210,29 +214,31 @@ public class DeviceFeatureGeneralFragment extends CustomPreferenceFragment imple
             category.removePreference(mPanelColor);
         }
 
-        mLcdPowerReduce = (AwesomeTogglePreference) findPreference("lcd_power_reduce");
-        if (mLcdPowerReduce.isSupported()) {
-            mLcdPowerReduce.initValue();
-            mLcdPowerReduce.setOnPreferenceChangeListener(this);
+        AwesomeTogglePreference lcdPowerReduce =
+                (AwesomeTogglePreference) findPreference("lcd_power_reduce");
+        if (lcdPowerReduce.isSupported()) {
+            lcdPowerReduce.initValue();
+            lcdPowerReduce.setOnPreferenceChangeListener(this);
         } else {
-            category.removePreference(mLcdPowerReduce);
+            category.removePreference(lcdPowerReduce);
         }
 
-        mLcdSunlightEnhancement =
+        AwesomeTogglePreference lcdSunlightEnhancement =
                 (AwesomeTogglePreference) findPreference("lcd_sunlight_enhancement");
-        if (mLcdSunlightEnhancement.isSupported()) {
-            mLcdSunlightEnhancement.initValue();
-            mLcdSunlightEnhancement.setOnPreferenceChangeListener(this);
+        if (lcdSunlightEnhancement.isSupported()) {
+            lcdSunlightEnhancement.initValue();
+            lcdSunlightEnhancement.setOnPreferenceChangeListener(this);
         } else {
-            category.removePreference(mLcdSunlightEnhancement);
+            category.removePreference(lcdSunlightEnhancement);
         }
 
-        mLcdColorEnhancement = (AwesomeTogglePreference) findPreference("lcd_color_enhancement");
-        if (mLcdColorEnhancement.isSupported()) {
-            mLcdColorEnhancement.initValue();
-            mLcdColorEnhancement.setOnPreferenceChangeListener(this);
+        AwesomeTogglePreference lcdColorEnhancement =
+                (AwesomeTogglePreference) findPreference("lcd_color_enhancement");
+        if (lcdColorEnhancement.isSupported()) {
+            lcdColorEnhancement.initValue();
+            lcdColorEnhancement.setOnPreferenceChangeListener(this);
         } else {
-            category.removePreference(mLcdColorEnhancement);
+            category.removePreference(lcdColorEnhancement);
         }
 
         if (category.getPreferenceCount() == 0) {
@@ -240,12 +246,13 @@ public class DeviceFeatureGeneralFragment extends CustomPreferenceFragment imple
         }
 
         category = (PreferenceCategory) findPreference("extras");
-        mLoggerMode = (AwesomeTogglePreference) findPreference("logger_mode");
-        if (mLoggerMode.isSupported()) {
-            mLoggerMode.initValue(true);
-            mLoggerMode.setOnPreferenceChangeListener(this);
+        AwesomeTogglePreference loggerMode =
+                (AwesomeTogglePreference) findPreference("logger_mode");
+        if (loggerMode.isSupported()) {
+            loggerMode.initValue(true);
+            loggerMode.setOnPreferenceChangeListener(this);
         } else {
-            category.removePreference(mLoggerMode);
+            category.removePreference(loggerMode);
         }
 
         if (category.getPreferenceCount() == 0) {
@@ -278,38 +285,11 @@ public class DeviceFeatureGeneralFragment extends CustomPreferenceFragment imple
                     new BootupItem(DatabaseHandler.CATEGORY_DEVICE, mGloveMode.getKey(),
                             mGloveMode.getKey(), (value ? "1" : "0"), true));
             return true;
-        } else if (preference == mAwesomeGloveMode) {
-            mAwesomeGloveMode.writeValue((Boolean) o);
-            return true;
-        } else if (preference == mResetOnSuspend) {
-            mResetOnSuspend.writeValue((Boolean) o);
-            return true;
-        } else if (preference == mKnockOn) {
-            mKnockOn.writeValue((Boolean) o);
-            return true;
-        } else if (preference == mBacklightKey) {
-            mBacklightKey.writeValue((Boolean) o);
-            return true;
-        } else if (preference == mBacklightNotification) {
-            mBacklightNotification.writeValue((Boolean) o);
-            return true;
-        } else if (preference == mKeyboardBacklight) {
-            mKeyboardBacklight.writeValue((Boolean) o);
+        } else if (preference instanceof AwesomeTogglePreference) {
+            ((AwesomeTogglePreference) preference).writeValue((Boolean) o);
             return true;
         } else if (preference == mPanelColor) {
             mPanelColor.writeValue(String.valueOf(o));
-            return true;
-        } else if (preference == mLcdPowerReduce) {
-            mLcdPowerReduce.writeValue((Boolean) o);
-            return true;
-        } else if (preference == mLcdSunlightEnhancement) {
-            mLcdSunlightEnhancement.writeValue((Boolean) o);
-            return true;
-        } else if (preference == mLcdColorEnhancement) {
-            mLcdColorEnhancement.writeValue((Boolean) o);
-            return true;
-        } else if (mLoggerMode == preference) {
-            mLoggerMode.writeValue((Boolean) o);
             return true;
         }
 
@@ -356,7 +336,7 @@ public class DeviceFeatureGeneralFragment extends CustomPreferenceFragment imple
     private static final String GLOVE_MODE_ENABLE = GLOVE_MODE + ",1";
     private static final String GLOVE_MODE_DISABLE = GLOVE_MODE + ",0";
 
-    public void enableHts(final boolean enable) {
+    private void enableHts(final boolean enable) {
         if (mGloveMode != null) mGloveMode.setEnabled(false);
         final String mode = (enable ? GLOVE_MODE_ENABLE : GLOVE_MODE_DISABLE);
         Utils.getCommandResult(this, Utils.getWriteCommand(COMMAND_PATH, mode) +
