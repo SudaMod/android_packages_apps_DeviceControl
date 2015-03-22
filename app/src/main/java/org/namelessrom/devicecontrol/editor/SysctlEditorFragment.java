@@ -17,15 +17,10 @@
  */
 package org.namelessrom.devicecontrol.editor;
 
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -36,7 +31,6 @@ import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,33 +41,26 @@ import org.namelessrom.devicecontrol.R;
 import org.namelessrom.devicecontrol.objects.Prop;
 import org.namelessrom.devicecontrol.objects.ShellOutput;
 import org.namelessrom.devicecontrol.ui.adapters.PropAdapter;
-import org.namelessrom.devicecontrol.ui.views.AttachFragment;
 import org.namelessrom.devicecontrol.utils.Scripts;
 import org.namelessrom.devicecontrol.utils.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
-public class SysctlEditorFragment extends AttachFragment implements AdapterView.OnItemClickListener, ShellOutput.OnShellOutputListener {
+public class SysctlEditorFragment extends BaseEditorFragment {
 
     //==============================================================================================
     // Fields
     //==============================================================================================
-    private static final int HANDLER_DELAY = 200;
-
     private static final int APPLY = 200;
     private static final int SAVE = 201;
 
     private ListView mListView;
     private LinearLayout mLoadingView;
-    private LinearLayout mEmptyView;
-    private RelativeLayout mTools;
 
     private PropAdapter mAdapter = null;
-    private EditText mFilter = null;
-    private final List<Prop> mProps = new ArrayList<>();
+    private final ArrayList<Prop> mProps = new ArrayList<>();
 
     private boolean mLoadFull = false;
 
@@ -85,13 +72,11 @@ public class SysctlEditorFragment extends AttachFragment implements AdapterView.
 
     @Override public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        loadAllTheStuff();
+    }
 
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                new GetPropOperation().execute();
-            }
-        }, HANDLER_DELAY);
+    @Override protected PropAdapter getAdapter() {
+        return mAdapter;
     }
 
     @Override public View onCreateView(final LayoutInflater inflater, final ViewGroup container,
@@ -107,35 +92,18 @@ public class SysctlEditorFragment extends AttachFragment implements AdapterView.
         mListView.setFastScrollAlwaysVisible(true);
 
         mLoadingView = (LinearLayout) view.findViewById(R.id.loading);
-        mEmptyView = (LinearLayout) view.findViewById(R.id.nofiles);
-        mTools = (RelativeLayout) view.findViewById(R.id.tools);
-        mFilter = (EditText) view.findViewById(R.id.filter);
-        mFilter.addTextChangedListener(new TextWatcher() {
-            @Override public void afterTextChanged(final Editable s) { }
 
-            @Override public void beforeTextChanged(final CharSequence s, final int start,
-                    final int count, final int after) { }
-
-            @Override public void onTextChanged(final CharSequence s, final int start,
-                    final int before, final int count) {
-                if (mAdapter != null) {
-                    final Editable filter = mFilter.getText();
-                    mAdapter.getFilter().filter(filter != null ? filter.toString() : "");
-                }
-            }
-        });
-
-        mTools.setVisibility(View.GONE);
+        final LinearLayout emptyView = (LinearLayout) view.findViewById(R.id.nofiles);
+        mListView.setEmptyView(emptyView);
 
         return view;
     }
 
     @Override public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_editor, menu);
-
-        menu.removeItem(R.id.menu_action_add);
-
         super.onCreateOptionsMenu(menu, inflater);
+
+        // remove unused items
+        menu.removeItem(R.id.menu_action_add);
     }
 
     @Override public boolean onOptionsItemSelected(final MenuItem item) {
@@ -147,15 +115,13 @@ public class SysctlEditorFragment extends AttachFragment implements AdapterView.
             }
             case R.id.menu_action_toggle: {
                 mLoadFull = !mLoadFull;
-                new GetPropOperation().execute();
+                loadAllTheStuff();
                 return true;
             }
         }
 
         return false;
     }
-
-    @Override public boolean showBurger() { return false; }
 
     @Override public void onItemClick(final AdapterView<?> parent, final View view,
             final int position, final long row) {
@@ -165,6 +131,32 @@ public class SysctlEditorFragment extends AttachFragment implements AdapterView.
         }
     }
 
+    // TODO: animate?
+    private void loadAllTheStuff() {
+        mLoadingView.setVisibility(View.VISIBLE);
+
+        final StringBuilder sb = new StringBuilder();
+        final String dn = Application.get().getFilesDirectory();
+
+        if (new File("/system/etc/sysctl.conf").exists()) {
+            sb.append(Scripts.copyFile("/system/etc/sysctl.conf", dn + "/sysctl.conf"));
+        } else {
+            sb.append("busybox echo \"# created by Device Control\n\" > ")
+                    .append(dn)
+                    .append("/sysctl.conf;\n");
+        }
+
+        if (mLoadFull) {
+            sb.append("busybox echo `busybox find /proc/sys/* -type f -perm -644 |")
+                    .append(" grep -v \"vm.\"`;\n");
+        } else {
+            sb.append("busybox echo `busybox find /proc/sys/vm/* -type f ")
+                    .append("-prune -perm -644`;\n");
+        }
+
+        Utils.getCommandResult(SysctlEditorFragment.this, -1, sb.toString());
+    }
+
     private void makeApplyDialog() {
         final Activity activity = getActivity();
         if (activity == null) return;
@@ -172,16 +164,14 @@ public class SysctlEditorFragment extends AttachFragment implements AdapterView.
         new AlertDialog.Builder(activity)
                 .setTitle(getString(R.string.dialog_warning))
                 .setMessage(getString(R.string.dialog_warning_apply))
-                .setNegativeButton(getString(android.R.string.cancel),
-                        new DialogInterface.OnClickListener() {
+                .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 dialogInterface.dismiss();
                             }
                         }
                 )
-                .setPositiveButton(getString(android.R.string.yes),
-                        new DialogInterface.OnClickListener() {
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 Utils.remount("/system", "rw");
@@ -195,48 +185,10 @@ public class SysctlEditorFragment extends AttachFragment implements AdapterView.
                                         Toast.LENGTH_SHORT).show();
                             }
                         }
-                )
-                .show();
+                ).show();
     }
 
-    //==============================================================================================
-    // Async Tasks
-    //==============================================================================================
-
-    // TODO: animation
-    private class GetPropOperation extends AsyncTask<String, Void, Void> {
-        @Override protected void onPreExecute() {
-            mLoadingView.setVisibility(View.VISIBLE);
-            mListView.setVisibility(View.GONE);
-            mEmptyView.setVisibility(View.GONE);
-            mTools.setVisibility(View.GONE);
-        }
-
-        @Override protected Void doInBackground(final String... params) {
-            final StringBuilder sb = new StringBuilder();
-            final String dn = Application.get().getFilesDirectory();
-
-            if (new File("/system/etc/sysctl.conf").exists()) {
-                sb.append(Scripts.copyFile("/system/etc/sysctl.conf", dn + "/sysctl.conf"));
-            } else {
-                sb.append("busybox echo \"# created by Device Control\n\" > ")
-                        .append(dn).append("/sysctl.conf;\n");
-            }
-
-            if (mLoadFull) {
-                sb.append("busybox echo `busybox find /proc/sys/* -type f -perm -644 |")
-                        .append(" grep -v \"vm.\"`;\n");
-            } else {
-                sb.append("busybox echo `busybox find /proc/sys/vm/* -type f ")
-                        .append("-prune -perm -644`;\n");
-            }
-
-            Utils.getCommandResult(SysctlEditorFragment.this, -1, sb.toString());
-
-            return null;
-        }
-    }
-
+    @Override
     public void onShellOutput(final ShellOutput shellOutput) {
         switch (shellOutput.id) {
             case SAVE:
@@ -284,15 +236,9 @@ public class SysctlEditorFragment extends AttachFragment implements AdapterView.
             }
             Collections.sort(mProps);
             mLoadingView.setVisibility(View.GONE);
-            if (mProps.isEmpty()) {
-                mEmptyView.setVisibility(View.VISIBLE);
-            } else {
-                mEmptyView.setVisibility(View.GONE);
-                mListView.setVisibility(View.VISIBLE);
-                mTools.setVisibility(View.VISIBLE);
-                mAdapter = new PropAdapter(activity, mProps);
-                mListView.setAdapter(mAdapter);
-            }
+
+            mAdapter = new PropAdapter(activity, mProps);
+            mListView.setAdapter(mAdapter);
         }
     }
 
@@ -323,14 +269,12 @@ public class SysctlEditorFragment extends AttachFragment implements AdapterView.
         new AlertDialog.Builder(activity)
                 .setTitle(title)
                 .setView(editDialog)
-                .setNegativeButton(getString(android.R.string.cancel),
-                        new DialogInterface.OnClickListener() {
+                .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(final DialogInterface dialog, final int which) { }
                         }
                 )
-                .setPositiveButton(getString(R.string.save)
-                        , new DialogInterface.OnClickListener() {
+                .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(final DialogInterface dialog, final int which) {
                         if (p != null) {

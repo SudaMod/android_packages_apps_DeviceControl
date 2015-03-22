@@ -17,13 +17,11 @@
  */
 package org.namelessrom.devicecontrol.editor;
 
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -35,7 +33,6 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -45,15 +42,13 @@ import org.namelessrom.devicecontrol.R;
 import org.namelessrom.devicecontrol.objects.Prop;
 import org.namelessrom.devicecontrol.objects.ShellOutput;
 import org.namelessrom.devicecontrol.ui.adapters.PropAdapter;
-import org.namelessrom.devicecontrol.ui.views.AttachFragment;
 import org.namelessrom.devicecontrol.utils.Scripts;
 import org.namelessrom.devicecontrol.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
-public class BuildPropEditorFragment extends AttachFragment implements AdapterView.OnItemClickListener, ShellOutput.OnShellOutputListener {
+public class BuildPropEditorFragment extends BaseEditorFragment {
 
     //==============================================================================================
     // Fields
@@ -63,12 +58,9 @@ public class BuildPropEditorFragment extends AttachFragment implements AdapterVi
 
     private ListView mListView;
     private LinearLayout mLoadingView;
-    private LinearLayout mEmptyView;
-    private RelativeLayout mTools;
 
     private PropAdapter mAdapter = null;
-    private EditText mFilter = null;
-    private final List<Prop> mProps = new ArrayList<>();
+    private final ArrayList<Prop> mProps = new ArrayList<>();
 
     //==============================================================================================
     // Overridden Methods
@@ -106,37 +98,23 @@ public class BuildPropEditorFragment extends AttachFragment implements AdapterVi
         });
 
         mLoadingView = (LinearLayout) view.findViewById(R.id.loading);
-        mEmptyView = (LinearLayout) view.findViewById(R.id.nofiles);
-        mTools = (RelativeLayout) view.findViewById(R.id.tools);
-        mFilter = (EditText) view.findViewById(R.id.filter);
-        mFilter.addTextChangedListener(new TextWatcher() {
-            @Override public void afterTextChanged(final Editable s) { }
 
-            @Override public void beforeTextChanged(final CharSequence s, final int start,
-                    final int count, final int after) { }
-
-            @Override public void onTextChanged(final CharSequence s, final int start,
-                    final int before, final int count) {
-                if (mAdapter != null) {
-                    final Editable filter = mFilter.getText();
-                    mAdapter.getFilter().filter(filter != null ? filter.toString() : "");
-                }
-            }
-        });
-
-        mListView.setVisibility(View.GONE);
-        mTools.setVisibility(View.GONE);
+        final LinearLayout emptyView = (LinearLayout) view.findViewById(R.id.nofiles);
+        mListView.setEmptyView(emptyView);
 
         return view;
     }
 
-    @Override public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_editor, menu);
+    @Override protected PropAdapter getAdapter() {
+        return mAdapter;
+    }
 
+    @Override public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+
+        // remove unused items
         menu.removeItem(R.id.menu_action_apply);
         menu.removeItem(R.id.menu_action_toggle);
-
-        super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override public boolean onOptionsItemSelected(final MenuItem item) {
@@ -151,10 +129,7 @@ public class BuildPropEditorFragment extends AttachFragment implements AdapterVi
         return false;
     }
 
-    @Override public boolean showBurger() { return false; }
-
-    @Override public void onItemClick(final AdapterView<?> parent, final View view,
-            final int position, final long row) {
+    @Override public void onItemClick(AdapterView<?> parent, View view, int position, long row) {
         if (mAdapter == null) return;
 
         final Prop p = mAdapter.getItem(position);
@@ -165,6 +140,7 @@ public class BuildPropEditorFragment extends AttachFragment implements AdapterVi
         }
     }
 
+    @Override
     public void onShellOutput(final ShellOutput shellOutput) {
         switch (shellOutput.id) {
             case SAVE:
@@ -190,37 +166,39 @@ public class BuildPropEditorFragment extends AttachFragment implements AdapterVi
     //==============================================================================================
 
     private void loadBuildProp(final String s) {
-        final Activity activity = getActivity();
-
         mProps.clear();
         final String p[] = s.split("\n");
         for (String aP : p) {
-            if (!aP.contains("#") && aP.trim().length() > 0 && aP.contains("=")) {
-                aP = aP.replace("[", "").replace("]", "");
-                String pp[] = aP.split("=");
-                if (pp.length >= 2) {
-                    final StringBuilder sb = new StringBuilder();
-                    for (int i = 2; i < pp.length; i++) {
-                        sb.append('=').append(pp[i]);
-                    }
-                    mProps.add(new Prop(pp[0].trim(), pp[1].trim() + sb.toString()));
-                } else {
-                    mProps.add(new Prop(pp[0].trim(), ""));
-                }
+            if (TextUtils.isEmpty(aP) || aP.contains("#") || !aP.contains("=")) {
+                continue;
             }
+
+            aP = aP.trim();
+            if (aP.length() <= 0) {
+                continue;
+            }
+
+            aP = aP.replace("[", "").replace("]", "");
+            final String pp[] = aP.split("=");
+
+            final Prop prop;
+            if (pp.length >= 2) {
+                final StringBuilder sb = new StringBuilder();
+                for (int i = 2; i < pp.length; i++) {
+                    sb.append('=').append(pp[i]);
+                }
+                prop = new Prop(pp[0].trim(), pp[1].trim() + sb.toString());
+            } else {
+                prop = new Prop(pp[0].trim(), "");
+            }
+            mProps.add(prop);
         }
         Collections.sort(mProps);
 
         mLoadingView.setVisibility(View.GONE);
-        if (mProps.isEmpty()) {
-            mEmptyView.setVisibility(View.VISIBLE);
-        } else {
-            mEmptyView.setVisibility(View.GONE);
-            mListView.setVisibility(View.VISIBLE);
-            mTools.setVisibility(View.VISIBLE);
-            mAdapter = new PropAdapter(activity, mProps);
-            mListView.setAdapter(mAdapter);
-        }
+
+        mAdapter = new PropAdapter(getActivity(), mProps);
+        mListView.setAdapter(mAdapter);
     }
 
     //==============================================================================================
@@ -230,8 +208,6 @@ public class BuildPropEditorFragment extends AttachFragment implements AdapterVi
     private void editBuildPropDialog(final Prop p) {
         final Activity activity = getActivity();
         if (activity == null) return;
-
-        String title;
 
         final View editDialog = LayoutInflater.from(getActivity())
                 .inflate(R.layout.dialog_build_prop, null, false);
@@ -245,27 +221,18 @@ public class BuildPropEditorFragment extends AttachFragment implements AdapterVi
         vAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         vAdapter.clear();
 
+        final String title;
         if (p != null) {
             title = getString(R.string.edit_property);
             final String v = p.getVal();
 
             lpresets.setVisibility(View.GONE);
-            if (v.equals("0")) {
+            if ("0".equals(v) || "1".equals(v)) {
                 vAdapter.add("0");
                 vAdapter.add("1");
                 lpresets.setVisibility(View.VISIBLE);
                 sp.setAdapter(vAdapter);
-            } else if (v.equals("1")) {
-                vAdapter.add("1");
-                vAdapter.add("0");
-                lpresets.setVisibility(View.VISIBLE);
-                sp.setAdapter(vAdapter);
-            } else if (v.equalsIgnoreCase("true")) {
-                vAdapter.add("true");
-                vAdapter.add("false");
-                lpresets.setVisibility(View.VISIBLE);
-                sp.setAdapter(vAdapter);
-            } else if (v.equalsIgnoreCase("false")) {
+            } else if ("true".equalsIgnoreCase(v) || "false".equalsIgnoreCase(v)) {
                 vAdapter.add("false");
                 vAdapter.add("true");
                 lpresets.setVisibility(View.VISIBLE);
@@ -289,8 +256,9 @@ public class BuildPropEditorFragment extends AttachFragment implements AdapterVi
         sp.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parentView, View selectedItemView,
                     int position, long id) {
-                if (sp.getSelectedItem() != null) {
-                    etValue.setText(sp.getSelectedItem().toString().trim());
+                final Object item = sp.getSelectedItem();
+                if (item != null) {
+                    etValue.setText(item.toString().trim());
                 }
             }
 
@@ -299,16 +267,14 @@ public class BuildPropEditorFragment extends AttachFragment implements AdapterVi
         new AlertDialog.Builder(activity)
                 .setTitle(title)
                 .setView(editDialog)
-                .setNegativeButton(getString(android.R.string.cancel),
-                        new DialogInterface.OnClickListener() {
+                .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.cancel();
                             }
                         }
                 )
-                .setPositiveButton(getString(R.string.save)
-                        , new DialogInterface.OnClickListener() {
+                .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         if (p != null) {
@@ -346,15 +312,14 @@ public class BuildPropEditorFragment extends AttachFragment implements AdapterVi
         new AlertDialog.Builder(activity)
                 .setTitle(title)
                 .setMessage(msg)
-                .setNegativeButton(getString(android.R.string.cancel),
-                        new DialogInterface.OnClickListener() {
+                .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                            @Override
                             public void onClick(DialogInterface dialog, int id) {
                                 dialog.cancel();
                             }
                         }
                 )
-                .setPositiveButton(getString(android.R.string.yes), new DialogInterface
-                        .OnClickListener() {
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         Utils.remount("/system", "rw");
@@ -362,8 +327,7 @@ public class BuildPropEditorFragment extends AttachFragment implements AdapterVi
                                 Scripts.removeProperty(prop.getName()));
                         if (mAdapter != null) mAdapter.remove(prop);
                     }
-                })
-                .show();
+                }).show();
     }
 
 }
