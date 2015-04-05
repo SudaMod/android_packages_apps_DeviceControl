@@ -38,9 +38,9 @@ import org.namelessrom.devicecontrol.DeviceConstants;
 import org.namelessrom.devicecontrol.Logger;
 import org.namelessrom.devicecontrol.R;
 import org.namelessrom.devicecontrol.configuration.TaskerConfiguration;
+import org.namelessrom.devicecontrol.modules.tasker.TaskerItem;
 import org.namelessrom.devicecontrol.objects.ShellOutput;
 import org.namelessrom.devicecontrol.services.TaskerService;
-import org.namelessrom.devicecontrol.tasker.TaskerItem;
 import org.namelessrom.devicecontrol.utils.cmdprocessor.CMDProcessor;
 
 import java.io.BufferedReader;
@@ -552,9 +552,9 @@ public class Utils {
 
     public static void restartActivity(final Activity activity) {
         if (activity == null) return;
-        activity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        activity.overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
         activity.finish();
-        activity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        activity.overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
         activity.startActivity(activity.getIntent());
     }
 
@@ -571,12 +571,6 @@ public class Utils {
         final int exp = (int) (Math.log(kilobytes) / Math.log(1024));
         return String.format("%.0f %sB", kilobytes / Math.pow(1024, exp),
                 String.valueOf("MGTPE".charAt(exp - 1)));
-    }
-
-    public static String tryParseKiloByte(final String value, final int mult) {
-        try {
-            return humanReadableKiloByteCount(Long.parseLong(value) * mult);
-        } catch (Exception exc) { return value; }
     }
 
     public static String getAndroidId() {

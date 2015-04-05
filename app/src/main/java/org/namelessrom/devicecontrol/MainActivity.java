@@ -43,41 +43,39 @@ import com.pollfish.constants.Position;
 import com.pollfish.main.PollFish;
 import com.stericson.roottools.RootTools;
 
-import org.namelessrom.devicecontrol.about.AboutFragment;
 import org.namelessrom.devicecontrol.activities.BaseActivity;
-import org.namelessrom.devicecontrol.appmanager.AppListFragment;
 import org.namelessrom.devicecontrol.configuration.DeviceConfiguration;
-import org.namelessrom.devicecontrol.database.DatabaseHandler;
-import org.namelessrom.devicecontrol.device.DeviceFeatureFragment;
-import org.namelessrom.devicecontrol.device.DeviceInformationFragment;
-import org.namelessrom.devicecontrol.device.sub.FastChargeFragment;
-import org.namelessrom.devicecontrol.device.sub.SoundControlFragment;
-import org.namelessrom.devicecontrol.editor.BuildPropEditorFragment;
-import org.namelessrom.devicecontrol.editor.SysctlEditorFragment;
-import org.namelessrom.devicecontrol.editor.SysctlFragment;
-import org.namelessrom.devicecontrol.flasher.FlasherFragment;
 import org.namelessrom.devicecontrol.listeners.OnBackPressedListener;
-import org.namelessrom.devicecontrol.tasker.TaskerFragment;
+import org.namelessrom.devicecontrol.modules.about.AboutFragment;
+import org.namelessrom.devicecontrol.modules.appmanager.AppListFragment;
+import org.namelessrom.devicecontrol.modules.cpu.CpuSettingsFragment;
+import org.namelessrom.devicecontrol.modules.cpu.GovernorFragment;
+import org.namelessrom.devicecontrol.modules.device.DeviceFeatureFragment;
+import org.namelessrom.devicecontrol.modules.device.DeviceInformationFragment;
+import org.namelessrom.devicecontrol.modules.device.sub.FastChargeFragment;
+import org.namelessrom.devicecontrol.modules.device.sub.SoundControlFragment;
+import org.namelessrom.devicecontrol.modules.editor.BuildPropEditorFragment;
+import org.namelessrom.devicecontrol.modules.editor.SysctlEditorFragment;
+import org.namelessrom.devicecontrol.modules.editor.SysctlFragment;
+import org.namelessrom.devicecontrol.modules.flasher.FlasherFragment;
+import org.namelessrom.devicecontrol.modules.performance.FilesystemFragment;
+import org.namelessrom.devicecontrol.modules.performance.GpuSettingsFragment;
+import org.namelessrom.devicecontrol.modules.performance.InformationFragment;
+import org.namelessrom.devicecontrol.modules.performance.ThermalFragment;
+import org.namelessrom.devicecontrol.modules.performance.sub.EntropyFragment;
+import org.namelessrom.devicecontrol.modules.performance.sub.IoSchedConfigFragment;
+import org.namelessrom.devicecontrol.modules.performance.sub.KsmFragment;
+import org.namelessrom.devicecontrol.modules.performance.sub.UksmFragment;
+import org.namelessrom.devicecontrol.modules.performance.sub.VoltageFragment;
+import org.namelessrom.devicecontrol.modules.preferences.PreferencesFragment;
+import org.namelessrom.devicecontrol.modules.tasker.TaskerFragment;
+import org.namelessrom.devicecontrol.modules.tools.ToolsMoreFragment;
+import org.namelessrom.devicecontrol.modules.tools.WirelessFileManagerFragment;
 import org.namelessrom.devicecontrol.ui.adapters.MenuListArrayAdapter;
-import org.namelessrom.devicecontrol.cpu.CpuSettingsFragment;
-import org.namelessrom.devicecontrol.ui.fragments.performance.FilesystemFragment;
-import org.namelessrom.devicecontrol.ui.fragments.performance.GpuSettingsFragment;
-import org.namelessrom.devicecontrol.ui.fragments.performance.InformationFragment;
-import org.namelessrom.devicecontrol.ui.fragments.performance.ThermalFragment;
-import org.namelessrom.devicecontrol.ui.fragments.performance.sub.EntropyFragment;
-import org.namelessrom.devicecontrol.cpu.GovernorFragment;
-import org.namelessrom.devicecontrol.ui.fragments.performance.sub.IoSchedConfigFragment;
-import org.namelessrom.devicecontrol.ui.fragments.performance.sub.KsmFragment;
-import org.namelessrom.devicecontrol.ui.fragments.performance.sub.UksmFragment;
-import org.namelessrom.devicecontrol.ui.fragments.performance.sub.VoltageFragment;
-import org.namelessrom.devicecontrol.ui.fragments.preferences.PreferencesFragment;
-import org.namelessrom.devicecontrol.ui.fragments.tools.ToolsMoreFragment;
-import org.namelessrom.devicecontrol.ui.fragments.tools.WirelessFileManagerFragment;
 import org.namelessrom.devicecontrol.utils.AppHelper;
 import org.namelessrom.devicecontrol.utils.Utils;
 import org.namelessrom.proprietary.Configuration;
 
-import java.io.File;
 import java.util.ArrayList;
 
 public class MainActivity extends BaseActivity implements AdapterView.OnItemClickListener, View.OnClickListener {
@@ -101,54 +99,66 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
     private int mFragmentTitle = R.string.home;
     private int mSubFragmentTitle = -1;
 
-    private final ArrayList<Integer> mMenuEntries = new ArrayList<>();
-    private final ArrayList<Integer> mMenuIcons = new ArrayList<>();
+    private ArrayList<MenuListArrayAdapter.MenuItem> setupMenuLists() {
+        final ArrayList<MenuListArrayAdapter.MenuItem> menuItems = new ArrayList<>();
 
-    private void setupMenuLists() {
         // header - device
-        mMenuEntries.add(R.string.device);
-        mMenuIcons.add(-1);
+        menuItems.add(new MenuListArrayAdapter.MenuItem(-1, R.string.device, -1));
         // device - information
-        mMenuEntries.add(DeviceConstants.ID_DEVICE_INFORMATION);
-        mMenuIcons.add(R.drawable.ic_device_info);
+        menuItems.add(new MenuListArrayAdapter.MenuItem(
+                DeviceConstants.ID_DEVICE_INFORMATION, R.string.device_information,
+                R.drawable.ic_device_info));
         // device - features
-        mMenuEntries.add(DeviceConstants.ID_FEATURES);
-        mMenuIcons.add(R.drawable.ic_developer_mode);
+        menuItems.add(new MenuListArrayAdapter.MenuItem(
+                DeviceConstants.ID_FEATURES, R.string.features,
+                R.drawable.ic_developer_mode));
 
         // header - performance
-        mMenuEntries.add(R.string.performance);
-        mMenuIcons.add(-1);
+        menuItems.add(new MenuListArrayAdapter.MenuItem(-1, R.string.performance, -1));
         // performance - information
-        mMenuEntries.add(DeviceConstants.ID_PERFORMANCE_INFO);
-        mMenuIcons.add(R.drawable.ic_menu_perf_info);
+        menuItems.add(new MenuListArrayAdapter.MenuItem(
+                DeviceConstants.ID_PERFORMANCE_INFO, R.string.information,
+                R.drawable.ic_menu_perf_info));
         // performance - cpu
-        mMenuEntries.add(DeviceConstants.ID_PERFORMANCE_CPU_SETTINGS);
-        mMenuIcons.add(R.drawable.ic_memory);
+        menuItems.add(new MenuListArrayAdapter.MenuItem(
+                DeviceConstants.ID_PERFORMANCE_CPU_SETTINGS, R.string.cpusettings,
+                R.drawable.ic_memory));
         // performance - gpu
-        mMenuEntries.add(DeviceConstants.ID_PERFORMANCE_GPU_SETTINGS);
-        mMenuIcons.add(R.drawable.ic_display);
+        menuItems.add(new MenuListArrayAdapter.MenuItem(
+                DeviceConstants.ID_PERFORMANCE_GPU_SETTINGS, R.string.gpusettings,
+                R.drawable.ic_display));
         // performance - filesystem
-        mMenuEntries.add(DeviceConstants.ID_FILESYSTEM);
-        mMenuIcons.add(R.drawable.ic_storage);
+        menuItems.add(new MenuListArrayAdapter.MenuItem(
+                DeviceConstants.ID_FILESYSTEM, R.string.filesystem,
+                R.drawable.ic_storage));
         // performance - thermal
         if (Utils.fileExists(getString(R.string.directory_msm_thermal))
                 || Utils.fileExists(getString(R.string.file_intelli_thermal_base))) {
-            mMenuEntries.add(DeviceConstants.ID_THERMAL);
-            mMenuIcons.add(R.drawable.ic_heat);
+            menuItems.add(new MenuListArrayAdapter.MenuItem(
+                    DeviceConstants.ID_THERMAL, R.string.thermal,
+                    R.drawable.ic_heat));
         }
 
         // header - tools
-        mMenuEntries.add(R.string.tools);
-        mMenuIcons.add(-1);
+        menuItems.add(new MenuListArrayAdapter.MenuItem(-1, R.string.tools, -1));
+        // tools - app manager
+        menuItems.add(new MenuListArrayAdapter.MenuItem(
+                DeviceConstants.ID_TOOLS_APP_MANAGER, R.string.app_manager,
+                R.drawable.ic_android));
         // tools - tasker
-        mMenuEntries.add(DeviceConstants.ID_TOOLS_TASKER);
-        mMenuIcons.add(R.drawable.ic_extension);
+        menuItems.add(new MenuListArrayAdapter.MenuItem(
+                DeviceConstants.ID_TOOLS_TASKER, R.string.tasker,
+                R.drawable.ic_extension));
         // tools - flasher
-        mMenuEntries.add(DeviceConstants.ID_TOOLS_FLASHER);
-        mMenuIcons.add(R.drawable.ic_flash);
+        menuItems.add(new MenuListArrayAdapter.MenuItem(
+                DeviceConstants.ID_TOOLS_FLASHER, R.string.flasher,
+                R.drawable.ic_flash));
         // tools - more
-        mMenuEntries.add(DeviceConstants.ID_TOOLS_MORE);
-        mMenuIcons.add(R.drawable.ic_widgets);
+        menuItems.add(new MenuListArrayAdapter.MenuItem(
+                DeviceConstants.ID_TOOLS_MORE, R.string.more,
+                R.drawable.ic_widgets));
+
+        return menuItems;
     }
 
     //==============================================================================================
@@ -221,10 +231,10 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
         MainActivity.setSwipeOnContent(DeviceConfiguration.get(this).swipeOnContent);
 
         // setup menu list
-        setupMenuLists();
-        final MenuListArrayAdapter mAdapter = new MenuListArrayAdapter(
-                this, R.layout.menu_main_list_item, mMenuEntries, mMenuIcons);
-        menuList.setAdapter(mAdapter);
+        final ArrayList<MenuListArrayAdapter.MenuItem> menuItems = setupMenuLists();
+        final MenuListArrayAdapter adapter = new MenuListArrayAdapter(
+                this, R.layout.menu_main_list_item, menuItems);
+        menuList.setAdapter(adapter);
         menuList.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         menuList.setOnItemClickListener(this);
 
@@ -232,14 +242,6 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
         getSupportFragmentManager().executePendingTransactions();
 
         Utils.startTaskerService();
-
-        final String downgradePath = getFilesDir() + DeviceConstants.DC_DOWNGRADE;
-        if (Utils.fileExists(downgradePath)) {
-            if (!new File(downgradePath).delete()) {
-                Logger.wtf(this, "Could not delete downgrade indicator file!");
-            }
-            Toast.makeText(this, R.string.downgraded, Toast.LENGTH_LONG).show();
-        }
 
         if (DeviceConfiguration.get(this).dcFirstStart) {
             DeviceConfiguration.get(this).dcFirstStart = false;
@@ -260,7 +262,10 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
     }
 
     @Override public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-        loadFragmentPrivate((Integer) adapterView.getItemAtPosition(i), false);
+        final MenuListArrayAdapter.MenuItem item =
+                (MenuListArrayAdapter.MenuItem) adapterView.getItemAtPosition(i);
+        Logger.d(this, "onItemClick -> %s", item.id);
+        loadFragmentPrivate(item.id, false);
     }
 
     @Override public boolean onCreateOptionsMenu(Menu menu) {
@@ -351,7 +356,6 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
     }
 
     @Override protected void onDestroy() {
-        DatabaseHandler.tearDown();
         synchronized (lockObject) {
             Logger.i(this, "closing shells");
             try {
@@ -467,6 +471,12 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
                 mSubFragmentTitle = -1;
                 break;
             //--------------------------------------------------------------------------------------
+            case DeviceConstants.ID_TOOLS_APP_MANAGER:
+                if (!onResume) mCurrentFragment = new AppListFragment();
+                mTitle = mFragmentTitle = R.string.app_manager;
+                mSubFragmentTitle = -1;
+                break;
+            //--------------------------------------------------------------------------------------
             case DeviceConstants.ID_TOOLS_TASKER:
                 if (!onResume) mCurrentFragment = new TaskerFragment();
                 mTitle = mFragmentTitle = R.string.tasker;
@@ -495,10 +505,6 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemClic
             case DeviceConstants.ID_TOOLS_EDITORS_BUILD_PROP:
                 if (!onResume) mCurrentFragment = new BuildPropEditorFragment();
                 mTitle = mSubFragmentTitle = R.string.buildprop;
-                break;
-            case DeviceConstants.ID_TOOLS_APP_MANAGER:
-                if (!onResume) mCurrentFragment = new AppListFragment();
-                mTitle = mSubFragmentTitle = R.string.app_manager;
                 break;
             case DeviceConstants.ID_TOOLS_WIRELESS_FM:
                 if (!onResume) mCurrentFragment = new WirelessFileManagerFragment();
