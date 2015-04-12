@@ -23,8 +23,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import org.namelessrom.devicecontrol.Logger;
-import org.namelessrom.devicecontrol.database.DataItem;
-import org.namelessrom.devicecontrol.database.DatabaseHandler;
 import org.namelessrom.devicecontrol.objects.BootupItem;
 
 import java.util.ArrayList;
@@ -34,17 +32,12 @@ import java.util.Iterator;
  * Bootup configuration which auto serializes itself to a file
  */
 public class BootupConfiguration extends BaseConfiguration<BootupConfiguration> {
-    public ArrayList<BootupItem> items;
-
-    public int migrationLevel;
-
-    private static final int MIGRATION_LEVEL_CURRENT = 1;
+    public ArrayList<BootupItem> items = new ArrayList<>();
 
     private static BootupConfiguration sInstance;
 
     private BootupConfiguration(Context context) {
         loadConfiguration(context);
-        migrateFromDatabase(context);
     }
 
     public static BootupConfiguration get(Context context) {
@@ -58,41 +51,13 @@ public class BootupConfiguration extends BaseConfiguration<BootupConfiguration> 
         return "bootup_configuration.json";
     }
 
-    @Override protected boolean migrateFromDatabase(Context context) {
-        if (MIGRATION_LEVEL_CURRENT == migrationLevel) {
-            return false;
-        }
-
-        Logger.i(this, "migrating: %s -> %s", migrationLevel, MIGRATION_LEVEL_CURRENT);
-
-        final ArrayList<DataItem> bootupItems = new ArrayList<>(DatabaseHandler.getInstance()
-                .getAllItems(DatabaseHandler.TABLE_BOOTUP, ""));
-
-        this.items = new ArrayList<>(bootupItems.size());
-
-        synchronized (this) {
-            for (final DataItem item : bootupItems) {
-                items.add(new BootupItem(item.getCategory(), item.getName(), item.getFileName(),
-                        item.getValue(), true));
-            }
-        }
-
-        // always bump if we need to further migrate
-        migrationLevel = MIGRATION_LEVEL_CURRENT;
-
-        saveConfiguration(context);
-        return true;
-    }
-
     @Override public BootupConfiguration loadConfiguration(Context context) {
         final BootupConfiguration config = loadRawConfiguration(context, BootupConfiguration.class);
         if (config == null) {
             return this;
         }
 
-        this.items = config.items;
-
-        this.migrationLevel = config.migrationLevel;
+        this.items = config.items != null ? config.items : new ArrayList<BootupItem>();
 
         return this;
     }
