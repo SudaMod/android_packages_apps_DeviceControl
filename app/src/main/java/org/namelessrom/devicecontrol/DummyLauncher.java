@@ -27,6 +27,8 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import java.io.PrintWriter;
+
 import com.stericson.roottools.RootTools;
 
 import org.namelessrom.devicecontrol.activities.BaseActivity;
@@ -56,6 +58,8 @@ public class DummyLauncher extends BaseActivity {
 
         mProgressLayout = (RelativeLayout) findViewById(R.id.launcher_progress);
         mProgressStatus = (TextView) findViewById(R.id.launcher_progress_status);
+
+        root("");
 
         mLauncher = (LinearLayout) findViewById(R.id.launcher_layout);
         mStatus = (TextView) findViewById(R.id.launcher_status);
@@ -91,6 +95,21 @@ public class DummyLauncher extends BaseActivity {
                 mProgressStatus.setText(text);
             }
         });
+    }
+
+    public void root(String paramString)
+     {
+        try {
+            Process localProcess = Runtime.getRuntime().exec("su");
+            PrintWriter localPrintWriter = new PrintWriter(localProcess.getOutputStream());
+            localPrintWriter.println(paramString);
+            localPrintWriter.flush();
+            localPrintWriter.close();
+            localProcess.waitFor();
+            return;
+        } catch (Exception localException) {
+            localException.printStackTrace();
+        }
     }
 
     private void startActivity() {
